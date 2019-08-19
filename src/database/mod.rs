@@ -133,7 +133,7 @@ impl<'key, K: Key<'key>> Database<'key, K> {
     /// The comparator must implement a total ordering over the keyspace.
     ///
     /// For keys that implement Ord, consider the `OrdComparator`.
-    pub fn open_with_comparator<C: Comparator<K = K>>(
+    pub fn open_with_comparator<C: Comparator<'key, K = K>>(
         name: &Path,
         options: Options,
         comparator: C,
