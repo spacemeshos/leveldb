@@ -39,7 +39,7 @@ pub trait Batch<'key, K: Key<'key>> {
     fn write(&self, options: WriteOptions, batch: &Writebatch<K>) -> Result<(), Error>;
 }
 
-impl<'key, K: Key<'key>> Batch<'key, K> for Database<K> {
+impl<'key, K: Key<'key>> Batch<'key, K> for Database<'key, K> {
     fn write(&self, options: WriteOptions, batch: &Writebatch<K>) -> Result<(), Error> {
         unsafe {
             let mut error = ptr::null_mut();
