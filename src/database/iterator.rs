@@ -163,13 +163,15 @@ pub trait LevelDBIterator<'a, 'iter, K: Key<'iter>> {
     }
 }
 
-impl<'a, K: Key> Iterator<'a, K> {
-    fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> Iterator<'a, K> {
+impl<'a, 'iter: 'a, K: Key<'iter>> Iterator<'a, 'iter, K> {
+    fn new(database: &'a Database<'iter, K>, options: ReadOptions<'a, 'iter, K>) -> Iterator<'a, 'iter, K> {
         unsafe {
             let c_readoptions = c_readoptions(&options);
             let ptr = leveldb_create_iterator(database.database.ptr, c_readoptions);
+
             leveldb_readoptions_destroy(c_readoptions);
             leveldb_iter_seek_to_first(ptr);
+
             Iterator {
                 start: true,
                 iter: RawIterator { ptr: ptr },
@@ -187,7 +189,7 @@ impl<'a, K: Key> Iterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> LevelDBIterator<'a, K> for Iterator<'a, K> {
+impl<'a, 'iter: 'a, K: Key<'iter>> LevelDBIterator<'a, 'iter, K> for Iterator<'a, 'iter, K> {
     #[inline]
     fn raw_iterator(&self) -> *mut leveldb_iterator_t {
         self.iter.ptr
@@ -222,8 +224,8 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for Iterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> KeyIterator<'a, K> {
-    fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> KeyIterator<'a, K> {
+impl<'a, 'iter: 'a, K: Key<'iter>> KeyIterator<'a, 'iter, K> {
+    fn new(database: &'a Database<'iter, K>, options: ReadOptions<'a, 'iter, K>) -> KeyIterator<'a, 'iter, K> {
         KeyIterator {
             inner: Iterator::new(database, options),
         }
@@ -236,7 +238,7 @@ impl<'a, K: Key> KeyIterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> LevelDBIterator<'a, K> for KeyIterator<'a, K> {
+impl<'a, 'iter: 'a, K: Key<'iter>> LevelDBIterator<'a, 'iter, K> for KeyIterator<'a, 'iter, K> {
     #[inline]
     fn raw_iterator(&self) -> *mut leveldb_iterator_t {
         self.inner.iter.ptr
@@ -271,8 +273,8 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for KeyIterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> ValueIterator<'a, K> {
-    fn new(database: &'a Database<K>, options: ReadOptions<'a, K>) -> ValueIterator<'a, K> {
+impl<'a, 'iter: 'a,  K: Key<'iter>> ValueIterator<'a, 'iter, K> {
+    fn new(database: &'a Database<'iter, K>, options: ReadOptions<'a, 'iter, K>) -> ValueIterator<'a, 'iter, K> {
         ValueIterator {
             inner: Iterator::new(database, options),
         }
@@ -285,7 +287,7 @@ impl<'a, K: Key> ValueIterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> LevelDBIterator<'a, K> for ValueIterator<'a, K> {
+impl<'a, 'iter: 'a, K: Key<'iter>> LevelDBIterator<'a, 'iter, K> for ValueIterator<'a, 'iter, K> {
     #[inline]
     fn raw_iterator(&self) -> *mut leveldb_iterator_t {
         self.inner.iter.ptr
@@ -320,7 +322,7 @@ impl<'a, K: Key> LevelDBIterator<'a, K> for ValueIterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> iter::Iterator for Iterator<'a, K> {
+impl<'a, 'iter: 'a, K: Key<'iter>> iter::Iterator for Iterator<'a, 'iter, K> {
     type Item = (K, Vec<u8>);
 
     fn next(&mut self) -> Option<(K, Vec<u8>)> {
@@ -332,7 +334,7 @@ impl<'a, K: Key> iter::Iterator for Iterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> iter::Iterator for KeyIterator<'a, K> {
+impl<'a, 'iter: 'a,  K: Key<'iter>> iter::Iterator for KeyIterator<'a, 'iter, K> {
     type Item = K;
 
     fn next(&mut self) -> Option<K> {
@@ -344,7 +346,7 @@ impl<'a, K: Key> iter::Iterator for KeyIterator<'a, K> {
     }
 }
 
-impl<'a, K: Key> iter::Iterator for ValueIterator<'a, K> {
+impl<'a, 'iter: 'a,  K: Key<'iter>> iter::Iterator for ValueIterator<'a, 'iter, K> {
     type Item = Vec<u8>;
 
     fn next(&mut self) -> Option<Vec<u8>> {
