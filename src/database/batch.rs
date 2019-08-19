@@ -108,7 +108,7 @@ impl<'key, K: Key<'key>> Writebatch<'key, K> {
     }
 
     /// Iterate over the writebatch, returning the resulting iterator
-    pub fn iterate<T: WritebatchIterator<K = K>>(&mut self, iterator: Box<T>) -> Box<T> {
+    pub fn iterate<'a, T: WritebatchIterator<'a, K = K>>(&mut self, iterator: Box<T>) -> Box<T> {
         unsafe {
             let iter = Box::into_raw(iterator);
             leveldb_writebatch_iterate(

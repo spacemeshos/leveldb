@@ -80,7 +80,7 @@ impl<'a, 'snap: 'a, K: Key<'snap>> Snapshot<'a, 'snap, K> {
     }
 }
 
-impl<'a, 'snap: 'a, K: Key<'snap>> Iterable<'a, K> for Snapshot<'a, 'snap, K> {
+impl<'a, 'snap: 'a, K: Key<'snap>> Iterable<'a, 'snap, K> for Snapshot<'a, 'snap, K> {
     fn iter(&'a self, mut options: ReadOptions<'a, 'snap, K>) -> Iterator<K> {
         options.snapshot = Some(self);
         self.database.iter(options)
