@@ -18,9 +18,9 @@ use libc::{c_char, c_void, size_t};
 /// * the name function returns a fixed name to detect errors when
 ///   opening databases with a different name
 /// * The comparison implementation
-pub trait Comparator<'a> {
+pub trait Comparator<'key> {
     /// The type that the comparator compares.
-    type K: Key<'a>;
+    type K: Key<'key>;
 
     /// Return the name of the Comparator
     fn name(&self) -> *const c_char;
@@ -33,12 +33,12 @@ pub trait Comparator<'a> {
 }
 
 /// OrdComparator is a comparator comparing Keys that implement `Ord`
-pub struct OrdComparator<'a, K: Key<'a> + Ord> {
+pub struct OrdComparator<'key, K: Key<'key> + Ord> {
     name: String,
     marker: PhantomData<K>,
 }
 
-impl<'a, K: Key<'a> + Ord> OrdComparator<'a, K> {
+impl<'key, K: Key<'key> + Ord> OrdComparator<'key, K> {
     /// Create a new OrdComparator
     pub fn new(name: &str) -> OrdComparator<K> {
         OrdComparator {
@@ -52,7 +52,7 @@ impl<'a, K: Key<'a> + Ord> OrdComparator<'a, K> {
 #[derive(Copy, Clone)]
 pub struct DefaultComparator;
 
-unsafe trait InternalComparator<'a>: Comparator<'a>
+unsafe trait InternalComparator<'key>: Comparator<'key>
 where
     Self: Sized,
 {
@@ -88,10 +88,10 @@ where
     }
 }
 
-unsafe impl<'a, C: Comparator<'a>> InternalComparator<'a> for C {}
+unsafe impl<'key, C: Comparator<'key>> InternalComparator<'key> for C {}
 
 #[allow(missing_docs)]
-pub fn create_comparator<'a, T: Comparator<'a>>(x: Box<T>) -> *mut leveldb_comparator_t {
+pub fn create_comparator<'key, T: Comparator<'key>>(x: Box<T>) -> *mut leveldb_comparator_t {
     unsafe {
         leveldb_comparator_create(
             Box::into_raw(x) as *mut c_void,
@@ -102,7 +102,7 @@ pub fn create_comparator<'a, T: Comparator<'a>>(x: Box<T>) -> *mut leveldb_compa
     }
 }
 
-impl<'a, K: Key<'a> + Ord> Comparator<'a> for OrdComparator<'a, K> {
+impl<'key, K: Key<'key> + Ord> Comparator<'key> for OrdComparator<'key, K> {
     type K = K;
 
     fn name(&self) -> *const c_char {
@@ -115,7 +115,7 @@ impl<'a, K: Key<'a> + Ord> Comparator<'a> for OrdComparator<'a, K> {
     }
 }
 
-impl<'a> Comparator<'a> for DefaultComparator {
+impl<'key> Comparator<'key> for DefaultComparator {
     type K = i32;
 
     fn name(&self) -> *const c_char {

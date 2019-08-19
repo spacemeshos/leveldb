@@ -31,20 +31,20 @@ impl Drop for RawSnapshot {
 ///
 /// Represents a database at a certain point in time,
 /// and allows for all read operations (get and iteration).
-pub struct Snapshot<'a, K: Key + 'a> {
+pub struct Snapshot<'a, 'key: 'a, K: Key<'key>> {
     raw: RawSnapshot,
     database: &'a Database<K>,
 }
 
 /// Structs implementing the Snapshots trait can be
 /// snapshotted.
-pub trait Snapshots<K: Key> {
+pub trait Snapshots<'key, K: Key<'key>> {
     /// Creates a snapshot and returns a struct
     /// representing it.
-    fn snapshot<'a>(&'a self) -> Snapshot<'a, K>;
+    fn snapshot<'a>(&'a self) -> Snapshot<'a, 'key, K>;
 }
 
-impl<K: Key> Snapshots<K> for Database<K> {
+impl<'key, K: Key<'key>> Snapshots<'key, K> for Database<'key, K> {
     fn snapshot<'a>(&'a self) -> Snapshot<'a, K> {
         let db_ptr = self.database.ptr;
         let snap = unsafe { leveldb_create_snapshot(db_ptr) };

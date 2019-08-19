@@ -13,13 +13,13 @@ use std::ptr;
 
 /// Key-Value-Access to the leveldb database, providing
 /// a basic interface.
-pub trait KV<K: Key> {
+pub trait KV<'snap, 'key, K: Key<'key>> {
     /// get a value from the database.
     ///
     /// The passed key will be compared using the comparator.
     fn get<'a, BK: Borrow<K>>(
         &self,
-        options: ReadOptions<'a, K>,
+        options: ReadOptions<'a, 'snap, 'key, K>,
         key: BK,
     ) -> Result<Option<Vec<u8>>, Error>;
 
@@ -31,7 +31,7 @@ pub trait KV<K: Key> {
     /// lead to better performance.
     fn get_bytes<'a, BK: Borrow<K>>(
         &self,
-        options: ReadOptions<'a, K>,
+        options: ReadOptions<'a, 'snap, 'key, K>,
         key: BK,
     ) -> Result<Option<Bytes>, Error>;
     /// put a binary value into the database.
