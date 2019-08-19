@@ -3,31 +3,27 @@
 name = "leveldb"
 version = "0.8.4"
 authors = [ "Florian Gilcher <florian.gilcher@asquera.de>" ]
-
+edition = "2018"
 description = "An interface for leveldb"
-
 license = "MIT"
 readme = "README.md"
-
 documentation = "http://skade.github.io/leveldb/"
 homepage = "https://github.com/skade/leveldb"
 repository = "https://github.com/skade/leveldb"
 
 [lib]
-
 name = "leveldb"
 
 [dependencies]
-
-db-key = "0.0.5"
-libc = "0.2.4"
+db-key = "0.1.0"
+libc = "0.2.*"
 
 [dependencies.leveldb-sys]
-version = "2.0.0"
+version = "2.0.3"
 features = ["snappy"]
 
 [dev-dependencies]
-tempdir = "0.3.4"
+tempdir = "0.3.7"
 
 [[test]]
 name = "tests"
