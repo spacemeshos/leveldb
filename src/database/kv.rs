@@ -69,26 +69,27 @@ impl<'key, 'snap, K: Key<'key>> KV<'snap, 'key, K> for Database<'key, K> {
         value: &[u8],
     ) -> Result<(), Error> {
         unsafe {
-            key.borrow().as_slice(|k| {
-                let mut error = ptr::null_mut();
-                let c_writeoptions = c_writeoptions(options);
-                leveldb_put(
-                    self.database.ptr,
-                    c_writeoptions,
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                    value.as_ptr() as *mut c_char,
-                    value.len() as size_t,
-                    &mut error,
-                );
-                leveldb_writeoptions_destroy(c_writeoptions);
+            let k = key.borrow().as_ref();
 
-                if error == ptr::null_mut() {
-                    Ok(())
-                } else {
-                    Err(Error::new_from_i8(error))
-                }
-            })
+            let mut error = ptr::null_mut();
+            let c_writeoptions = c_writeoptions(options);
+
+            leveldb_put(
+                self.database.ptr,
+                c_writeoptions,
+                k.as_ptr() as *mut c_char,
+                k.len() as size_t,
+                value.as_ptr() as *mut c_char,
+                value.len() as size_t,
+                &mut error,
+            );
+            leveldb_writeoptions_destroy(c_writeoptions);
+
+            if error == ptr::null_mut() {
+                Ok(())
+            } else {
+                Err(Error::new_from_i8(error))
+            }
         }
     }
 
@@ -100,58 +101,58 @@ impl<'key, 'snap, K: Key<'key>> KV<'snap, 'key, K> for Database<'key, K> {
     /// NOT the default.
     fn delete<BK: Borrow<K>>(&self, options: WriteOptions, key: BK) -> Result<(), Error> {
         unsafe {
-            key.borrow().as_slice(|k| {
-                let mut error = ptr::null_mut();
-                let c_writeoptions = c_writeoptions(options);
-                leveldb_delete(
-                    self.database.ptr,
-                    c_writeoptions,
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                    &mut error,
-                );
-                leveldb_writeoptions_destroy(c_writeoptions);
-                if error == ptr::null_mut() {
-                    Ok(())
-                } else {
-                    Err(Error::new_from_i8(error))
-                }
-            })
+            let k = key.borrow().as_ref();
+
+            let mut error = ptr::null_mut();
+            let c_writeoptions = c_writeoptions(options);
+            leveldb_delete(
+                self.database.ptr,
+                c_writeoptions,
+                k.as_ptr() as *mut c_char,
+                k.len() as size_t,
+                &mut error,
+            );
+            leveldb_writeoptions_destroy(c_writeoptions);
+            if error == ptr::null_mut() {
+                Ok(())
+            } else {
+                Err(Error::new_from_i8(error))
+            }
         }
     }
 
-    fn get_bytes<'a, BK: Borrow<K>>(
+    fn get_bytes<'a, 'b, 'c, BK: Borrow<K>>(
         &self,
-        options: ReadOptions<'a, K>,
+        options: ReadOptions<'a, 'b, 'c, K>,
         key: BK,
     ) -> Result<Option<Bytes>, Error> {
         unsafe {
-            key.borrow().as_slice(|k| {
-                let mut error = ptr::null_mut();
-                let mut length: size_t = 0;
-                let c_readoptions = c_readoptions(&options);
-                let result = leveldb_get(
-                    self.database.ptr,
-                    c_readoptions,
-                    k.as_ptr() as *mut c_char,
-                    k.len() as size_t,
-                    &mut length,
-                    &mut error,
-                );
-                leveldb_readoptions_destroy(c_readoptions);
+            let k = key.borrow().as_ref();
 
-                if error == ptr::null_mut() {
-                    Ok(Bytes::from_raw(result as *mut u8, length))
-                } else {
-                    Err(Error::new_from_i8(error))
-                }
-            })
+            let mut error = ptr::null_mut();
+            let mut length: size_t = 0;
+            let c_readoptions = c_readoptions(&options);
+            let result = leveldb_get(
+                self.database.ptr,
+                c_readoptions,
+                k.as_ptr() as *mut c_char,
+                k.len() as size_t,
+                &mut length,
+                &mut error,
+            );
+            leveldb_readoptions_destroy(c_readoptions);
+
+            if error == ptr::null_mut() {
+                Ok(Bytes::from_raw(result as *mut u8, length))
+            } else {
+                Err(Error::new_from_i8(error))
+            }
         }
     }
 
-    fn get<'a, BK: Borrow<K>>(
+    fn get<'a, 'b, 'c, BK: Borrow<K>>(
         &self,
-        options: ReadOptions<'a, K>,
+        options: ReadOptions<'a, 'b, 'c, K>,
         key: BK,
     ) -> Result<Option<Vec<u8>>, Error> {
         self.get_bytes(options, key).map(|val| val.map(Into::into))
