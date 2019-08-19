@@ -13,13 +13,13 @@ use std::ptr;
 
 /// Key-Value-Access to the leveldb database, providing
 /// a basic interface.
-pub trait KV<'snap, 'key, K: Key<'key>> {
+pub trait KV<'key, K: Key<'key>> {
     /// get a value from the database.
     ///
     /// The passed key will be compared using the comparator.
     fn get<'a, BK: Borrow<K>>(
         &self,
-        options: ReadOptions<'a, 'snap, 'key, K>,
+        options: ReadOptions<'a, 'key, K>,
         key: BK,
     ) -> Result<Option<Vec<u8>>, Error>;
 
@@ -31,7 +31,7 @@ pub trait KV<'snap, 'key, K: Key<'key>> {
     /// lead to better performance.
     fn get_bytes<'a, BK: Borrow<K>>(
         &self,
-        options: ReadOptions<'a, 'snap, 'key, K>,
+        options: ReadOptions<'a, 'key, K>,
         key: BK,
     ) -> Result<Option<Bytes>, Error>;
     /// put a binary value into the database.
@@ -53,7 +53,7 @@ pub trait KV<'snap, 'key, K: Key<'key>> {
     fn delete<BK: Borrow<K>>(&self, options: WriteOptions, key: BK) -> Result<(), Error>;
 }
 
-impl<'key, 'snap, K: Key<'key>> KV<'snap, 'key, K> for Database<'key, K> {
+impl<'key, K: Key<'key>> KV<'key, K> for Database<'key, K> {
     /// put a binary value into the database.
     ///
     /// If the key is already present in the database, it will be overwritten.
@@ -121,9 +121,9 @@ impl<'key, 'snap, K: Key<'key>> KV<'snap, 'key, K> for Database<'key, K> {
         }
     }
 
-    fn get_bytes<'a, 'b, 'c, BK: Borrow<K>>(
+    fn get_bytes<'a, 'b, BK: Borrow<K>>(
         &self,
-        options: ReadOptions<'a, 'b, 'c, K>,
+        options: ReadOptions<'a, 'b, K>,
         key: BK,
     ) -> Result<Option<Bytes>, Error> {
         unsafe {
@@ -150,9 +150,9 @@ impl<'key, 'snap, K: Key<'key>> KV<'snap, 'key, K> for Database<'key, K> {
         }
     }
 
-    fn get<'a, 'b, 'c, BK: Borrow<K>>(
+    fn get<'a, 'b, BK: Borrow<K>>(
         &self,
-        options: ReadOptions<'a, 'b, 'c, K>,
+        options: ReadOptions<'a, 'b, K>,
         key: BK,
     ) -> Result<Option<Vec<u8>>, Error> {
         self.get_bytes(options, key).map(|val| val.map(Into::into))

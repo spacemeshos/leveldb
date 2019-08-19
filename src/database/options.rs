@@ -94,7 +94,7 @@ impl WriteOptions {
 
 /// The read options to use for any read operation.
 #[allow(missing_copy_implementations)]
-pub struct ReadOptions<'a, 'snap: 'a, 'key: 'a, K: Key<'key>> {
+pub struct ReadOptions<'a, 'snap: 'a, K: Key<'snap>> {
     /// Whether to verify the saved checksums on read.
     ///
     /// default: false
@@ -110,12 +110,12 @@ pub struct ReadOptions<'a, 'snap: 'a, 'key: 'a, K: Key<'key>> {
     /// this yourself.
     ///
     /// default: None
-    pub snapshot: Option<&'a Snapshot<'snap, K>>,
+    pub snapshot: Option<&'a Snapshot<'a, 'snap, K>>,
 }
 
-impl<'a, 'snap: 'a, 'key: 'a, K: Key<'key>> ReadOptions<'a, 'snap, 'key, K> {
+impl<'a, 'snap: 'a, K: Key<'snap>> ReadOptions<'a, 'snap, K> {
     /// Return a `ReadOptions` struct with the default values.
-    pub fn new() -> ReadOptions<'a, 'snap, 'key, K> {
+    pub fn new() -> ReadOptions<'a, 'snap, K> {
         ReadOptions {
             verify_checksums: false,
             fill_cache: true,
@@ -163,11 +163,11 @@ pub unsafe fn c_writeoptions(options: WriteOptions) -> *mut leveldb_writeoptions
 }
 
 #[allow(missing_docs)]
-pub unsafe fn c_readoptions<'a, 'snap: 'a, 'key: 'a, K>(
-    options: &ReadOptions<'a, 'snap, 'key, K>,
+pub unsafe fn c_readoptions<'a, 'snap: 'a, K>(
+    options: &ReadOptions<'a, 'snap, K>,
 ) -> *mut leveldb_readoptions_t
 where
-    K: Key<'key>,
+    K: Key<'snap>,
 {
     let c_readoptions = leveldb_readoptions_create();
     leveldb_readoptions_set_verify_checksums(c_readoptions, options.verify_checksums as u8);

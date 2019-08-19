@@ -31,21 +31,21 @@ impl Drop for RawSnapshot {
 ///
 /// Represents a database at a certain point in time,
 /// and allows for all read operations (get and iteration).
-pub struct Snapshot<'a, 'key: 'a, K: Key<'key>> {
+pub struct Snapshot<'a, 'snap: 'a, K: Key<'snap>> {
     raw: RawSnapshot,
-    database: &'a Database<K>,
+    database: &'a Database<'snap, K>,
 }
 
 /// Structs implementing the Snapshots trait can be
 /// snapshotted.
-pub trait Snapshots<'key, K: Key<'key>> {
+pub trait Snapshots<'snap, K: Key<'snap>> {
     /// Creates a snapshot and returns a struct
     /// representing it.
-    fn snapshot<'a>(&'a self) -> Snapshot<'a, 'key, K>;
+    fn snapshot<'a>(&'a self) -> Snapshot<'a, 'snap, K>;
 }
 
-impl<'key, K: Key<'key>> Snapshots<'key, K> for Database<'key, K> {
-    fn snapshot<'a>(&'a self) -> Snapshot<'a, K> {
+impl<'snap, K: Key<'snap>> Snapshots<'snap, K> for Database<'snap, K> {
+    fn snapshot<'a>(&'a self) -> Snapshot<'a, 'snap, K> {
         let db_ptr = self.database.ptr;
         let snap = unsafe { leveldb_create_snapshot(db_ptr) };
 
@@ -60,13 +60,13 @@ impl<'key, K: Key<'key>> Snapshots<'key, K> for Database<'key, K> {
     }
 }
 
-impl<'a, K: Key> Snapshot<'a, K> {
+impl<'a, 'snap: 'a, K: Key<'snap>> Snapshot<'a, 'snap, K> {
     /// fetches a key from the database
     ///
     /// Inserts this snapshot into ReadOptions before reading
     pub fn get<BK: Borrow<K>>(
         &'a self,
-        mut options: ReadOptions<'a, K>,
+        mut options: ReadOptions<'a, 'snap, K>,
         key: BK,
     ) -> Result<Option<Vec<u8>>, Error> {
         options.snapshot = Some(self);
@@ -80,16 +80,16 @@ impl<'a, K: Key> Snapshot<'a, K> {
     }
 }
 
-impl<'a, K: Key + 'a> Iterable<'a, K> for Snapshot<'a, K> {
-    fn iter(&'a self, mut options: ReadOptions<'a, K>) -> Iterator<K> {
+impl<'a, 'snap: 'a, K: Key<'snap>> Iterable<'a, K> for Snapshot<'a, 'snap, K> {
+    fn iter(&'a self, mut options: ReadOptions<'a, 'snap, K>) -> Iterator<K> {
         options.snapshot = Some(self);
         self.database.iter(options)
     }
-    fn keys_iter(&'a self, mut options: ReadOptions<'a, K>) -> KeyIterator<K> {
+    fn keys_iter(&'a self, mut options: ReadOptions<'a, 'snap, K>) -> KeyIterator<K> {
         options.snapshot = Some(self);
         self.database.keys_iter(options)
     }
-    fn value_iter(&'a self, mut options: ReadOptions<'a, K>) -> ValueIterator<K> {
+    fn value_iter(&'a self, mut options: ReadOptions<'a, 'snap, K>) -> ValueIterator<K> {
         options.snapshot = Some(self);
         self.database.value_iter(options)
     }
