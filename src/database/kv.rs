@@ -53,7 +53,7 @@ pub trait KV<'snap, 'key, K: Key<'key>> {
     fn delete<BK: Borrow<K>>(&self, options: WriteOptions, key: BK) -> Result<(), Error>;
 }
 
-impl<K: Key> KV<K> for Database<K> {
+impl<'key, 'snap, K: Key<'key>> KV<'snap, 'key, K> for Database<'key, K> {
     /// put a binary value into the database.
     ///
     /// If the key is already present in the database, it will be overwritten.
